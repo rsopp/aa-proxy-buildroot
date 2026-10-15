@@ -80,6 +80,7 @@ fi
 echo "Running container with $ENGINE: aaproxybr $ENTRY $*"
 "$ENGINE" run $USERNS_ARG $INTERACTIVE --rm \
     -v "$(pwd):/app":z \
+    -v "$(pwd)/..:/aa-proxy":z \
     aaproxybr \
     "$ENTRY" "$@"
 exit $?

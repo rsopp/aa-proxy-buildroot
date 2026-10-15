@@ -1,0 +1,8 @@
+config BR2_PACKAGE_AA_PROXY_BAP
+	bool "aa-proxy-bap"
+	depends on BR2_PACKAGE_HOST_RUSTC_TARGET_ARCH_SUPPORTS
+	select BR2_PACKAGE_HOST_RUSTC
+	help
+	  Volkswagen PQ35 BAP CAN cluster integration daemon for aa-proxy-rs.
+	  Bridges Android Auto navigation, media, and phone metadata over
+	  WebSocket to the Kombiinstrument (MFA+ / Premium) via SocketCAN.
