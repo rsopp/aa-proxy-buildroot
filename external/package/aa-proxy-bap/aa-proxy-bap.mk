@@ -14,6 +14,39 @@ define AA_PROXY_BAP_INSTALL_TARGET_CMDS
 	$(INSTALL) -D -m 0644 $(@D)/contrib/bap_bridge.wasm $(TARGET_DIR)/usr/share/aa-proxy-bap/bap_bridge.wasm
 endef
 
+ifeq ($(BR2_PACKAGE_AA_PROXY_BAP_DISPLAY),y)
+ifeq ($(BR2_PACKAGE_RPI_FIRMWARE),y)
+AA_PROXY_BAP_DEPENDENCIES += rpi-firmware
+endif
+
+define AA_PROXY_BAP_ENABLE_DISPLAY_CONF
+	$(SED) 's/^enabled = false/enabled = true/' $(TARGET_DIR)/etc/aa-proxy-bap.toml
+endef
+AA_PROXY_BAP_POST_INSTALL_TARGET_HOOKS += AA_PROXY_BAP_ENABLE_DISPLAY_CONF
+
+define AA_PROXY_BAP_DISABLE_TTY1
+	if [ -f $(TARGET_DIR)/etc/inittab ]; then \
+		$(SED) '/^tty1::/d' $(TARGET_DIR)/etc/inittab; \
+	fi
+endef
+AA_PROXY_BAP_ROOTFS_PRE_CMD_HOOKS += AA_PROXY_BAP_DISABLE_TTY1
+
+define AA_PROXY_BAP_RPI_DISPLAY_CONFIG
+	if [ -f $(BINARIES_DIR)/rpi-firmware/config.txt ]; then \
+		$(SED) 's/^max_framebuffers=0/max_framebuffers=1/' $(BINARIES_DIR)/rpi-firmware/config.txt; \
+		$(SED) 's/^ignore_lcd=1/ignore_lcd=0/' $(BINARIES_DIR)/rpi-firmware/config.txt; \
+		$(SED) 's/^display_auto_detect=0/display_auto_detect=1/' $(BINARIES_DIR)/rpi-firmware/config.txt; \
+	fi
+	if [ -f $(BINARIES_DIR)/rpi-firmware/cmdline.txt ]; then \
+		if ! grep -q "vt.global_cursor_default=0" $(BINARIES_DIR)/rpi-firmware/cmdline.txt; then \
+			$(SED) 's/$$/ vt.global_cursor_default=0/' $(BINARIES_DIR)/rpi-firmware/cmdline.txt; \
+		fi; \
+	fi
+endef
+AA_PROXY_BAP_INSTALL_IMAGES = YES
+AA_PROXY_BAP_POST_INSTALL_IMAGES_HOOKS += AA_PROXY_BAP_RPI_DISPLAY_CONFIG
+endif
+
 AA_PROXY_BAP_CARGO_BUILD_OPTS = --package aa-proxy-bap
 
 # pass git hashes as env variables

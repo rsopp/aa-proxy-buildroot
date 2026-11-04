@@ -46,6 +46,20 @@ if [ ! -e "${GENIMAGE_CFG}" ]; then
 		> "${GENIMAGE_CFG}"
 fi
 
+# Configure RPi display and disable cursor if aa-proxy-bap display is enabled
+if grep -q '^BR2_PACKAGE_AA_PROXY_BAP_DISPLAY=y$' "${BR2_CONFIG}"; then
+	if [ -f "${BINARIES_DIR}/rpi-firmware/config.txt" ]; then
+		sed -i 's/^max_framebuffers=0/max_framebuffers=1/' "${BINARIES_DIR}/rpi-firmware/config.txt"
+		sed -i 's/^ignore_lcd=1/ignore_lcd=0/' "${BINARIES_DIR}/rpi-firmware/config.txt"
+		sed -i 's/^display_auto_detect=0/display_auto_detect=1/' "${BINARIES_DIR}/rpi-firmware/config.txt"
+	fi
+	if [ -f "${BINARIES_DIR}/rpi-firmware/cmdline.txt" ]; then
+		if ! grep -q "vt.global_cursor_default=0" "${BINARIES_DIR}/rpi-firmware/cmdline.txt"; then
+			sed -i 's/$/ vt.global_cursor_default=0/' "${BINARIES_DIR}/rpi-firmware/cmdline.txt"
+		fi
+	fi
+fi
+
 # Pass an empty rootpath. genimage makes a full copy of the given rootpath to
 # ${GENIMAGE_TMP}/root so passing TARGET_DIR would be a waste of time and disk
 # space. We don't rely on genimage to build the rootfs image, just to insert a
