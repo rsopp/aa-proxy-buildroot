@@ -14,13 +14,37 @@ define AA_PROXY_BAP_INSTALL_TARGET_CMDS
 	$(INSTALL) -D -m 0644 $(@D)/contrib/bap_bridge.wasm $(TARGET_DIR)/usr/share/aa-proxy-bap/bap_bridge.wasm
 endef
 
-ifeq ($(BR2_PACKAGE_AA_PROXY_BAP_DISPLAY),y)
+# Use KCONFIG_SET_OPT(...,y) so existing =m defconfig defaults (e.g. bcm2711 CONFIG_SPI_BCM2835=m)
+# are promoted to built-in =y instead of being skipped by KCONFIG_ENABLE_OPT.
+define AA_PROXY_BAP_LINUX_CONFIG_FIXUPS
+	$(call KCONFIG_SET_OPT,CONFIG_CAN,y)
+	$(call KCONFIG_SET_OPT,CONFIG_CAN_RAW,y)
+	$(call KCONFIG_SET_OPT,CONFIG_CAN_BCM,y)
+	$(call KCONFIG_SET_OPT,CONFIG_CAN_DEV,y)
+	$(call KCONFIG_SET_OPT,CONFIG_CAN_NETLINK,y)
+	$(call KCONFIG_SET_OPT,CONFIG_CAN_CALC_BITTIMING,y)
+	$(call KCONFIG_SET_OPT,CONFIG_CAN_MCP251X,y)
+	$(call KCONFIG_SET_OPT,CONFIG_SPI,y)
+	$(call KCONFIG_SET_OPT,CONFIG_SPI_BCM2835,y)
+endef
+
 ifeq ($(BR2_PACKAGE_RPI_FIRMWARE),y)
 AA_PROXY_BAP_DEPENDENCIES += rpi-firmware
+AA_PROXY_BAP_INSTALL_IMAGES = YES
+
+define AA_PROXY_BAP_RPI_CAN_CONFIG
+	if [ -f $(BINARIES_DIR)/rpi-firmware/config.txt ]; then \
+		if ! grep -q "dtoverlay=mcp2515-can0" $(BINARIES_DIR)/rpi-firmware/config.txt; then \
+			printf '\n[all]\n# Waveshare CAN HAT (MCP2515)\ndtparam=spi=on\ndtoverlay=mcp2515-can0,oscillator=12000000,interrupt=25\n' >> $(BINARIES_DIR)/rpi-firmware/config.txt; \
+		fi; \
+	fi
+endef
+AA_PROXY_BAP_POST_INSTALL_IMAGES_HOOKS += AA_PROXY_BAP_RPI_CAN_CONFIG
 endif
 
+ifeq ($(BR2_PACKAGE_AA_PROXY_BAP_DISPLAY),y)
 define AA_PROXY_BAP_ENABLE_DISPLAY_CONF
-	$(SED) 's/^enabled = false/enabled = true/' $(TARGET_DIR)/etc/aa-proxy-bap.toml
+	$(SED) '/^\[display\]/,/^\[/{s/^enabled = false/enabled = true/}' $(TARGET_DIR)/etc/aa-proxy-bap.toml
 endef
 AA_PROXY_BAP_POST_INSTALL_TARGET_HOOKS += AA_PROXY_BAP_ENABLE_DISPLAY_CONF
 
@@ -43,7 +67,6 @@ define AA_PROXY_BAP_RPI_DISPLAY_CONFIG
 		fi; \
 	fi
 endef
-AA_PROXY_BAP_INSTALL_IMAGES = YES
 AA_PROXY_BAP_POST_INSTALL_IMAGES_HOOKS += AA_PROXY_BAP_RPI_DISPLAY_CONFIG
 endif
 
