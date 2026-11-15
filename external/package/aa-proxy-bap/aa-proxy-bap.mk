@@ -35,7 +35,7 @@ AA_PROXY_BAP_INSTALL_IMAGES = YES
 define AA_PROXY_BAP_RPI_CAN_CONFIG
 	if [ -f $(BINARIES_DIR)/rpi-firmware/config.txt ]; then \
 		if ! grep -q "dtoverlay=mcp2515-can0" $(BINARIES_DIR)/rpi-firmware/config.txt; then \
-			printf '\n[all]\n# Waveshare CAN HAT (MCP2515)\ndtparam=spi=on\ndtoverlay=mcp2515-can0,oscillator=12000000,interrupt=25\n' >> $(BINARIES_DIR)/rpi-firmware/config.txt; \
+			printf '\n[all]\n# Waveshare 2-CH CAN HAT (Channel 0: MCP2515, 16MHz, INT GPIO23)\ndtparam=spi=on\ndtoverlay=mcp2515-can0,oscillator=16000000,interrupt=23\n' >> $(BINARIES_DIR)/rpi-firmware/config.txt; \
 		fi; \
 	fi
 endef
