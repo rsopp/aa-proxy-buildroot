@@ -34,7 +34,12 @@ AA_PROXY_BAP_INSTALL_IMAGES = YES
 
 define AA_PROXY_BAP_RPI_CAN_CONFIG
 	if [ -f $(BINARIES_DIR)/rpi-firmware/config.txt ]; then \
-		if ! grep -q "dtoverlay=mcp2515-can0" $(BINARIES_DIR)/rpi-firmware/config.txt; then \
+		if grep -q "^[[:space:]]*dtoverlay=mcp2515-can0" $(BINARIES_DIR)/rpi-firmware/config.txt; then \
+			$(SED) 's/^[[:space:]]*dtoverlay=mcp2515-can0.*/dtoverlay=mcp2515-can0,oscillator=16000000,interrupt=23/' $(BINARIES_DIR)/rpi-firmware/config.txt; \
+			if ! grep -q "^[[:space:]]*dtparam=spi=on" $(BINARIES_DIR)/rpi-firmware/config.txt; then \
+				printf 'dtparam=spi=on\n' >> $(BINARIES_DIR)/rpi-firmware/config.txt; \
+			fi; \
+		else \
 			printf '\n[all]\n# Waveshare 2-CH CAN HAT (Channel 0: MCP2515, 16MHz, INT GPIO23)\ndtparam=spi=on\ndtoverlay=mcp2515-can0,oscillator=16000000,interrupt=23\n' >> $(BINARIES_DIR)/rpi-firmware/config.txt; \
 		fi; \
 	fi
@@ -103,3 +108,4 @@ $(eval $(cargo-package))
 $(AA_PROXY_BAP_DIR)/.stamp_rsynced: aa-proxy-bap-force-build
 $(AA_PROXY_BAP_DIR)/.stamp_built: aa-proxy-bap-force-build
 $(AA_PROXY_BAP_DIR)/.stamp_target_installed: aa-proxy-bap-force-build
+$(AA_PROXY_BAP_DIR)/.stamp_images_installed: aa-proxy-bap-force-build
